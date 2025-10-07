@@ -1,0 +1,90 @@
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+#include <ctime>
+
+
+using namespace std;
+
+
+// constant for array size
+const int SIZE = 1000;
+
+
+// Function prototypes
+int* createArray(int* length);
+void writeBinary(int* arr, int length);
+int* readBinary(int& length);
+
+
+// createArray(): creates a dynamic array of 1000 ints with random values
+int* createArray(int* length) {
+*length = SIZE;
+int* arr = new int[*length];
+srand(static_cast<unsigned int>(time(0)));
+
+
+for (int i = 0; i < *length; i++) {
+arr[i] = rand() % 1000; // values 0–999
+}
+
+
+return arr;
+}
+
+
+// writeBinary(): writes array length and elements to a binary file
+void writeBinary(int* arr, int length) {
+ofstream outFile("binary.dat", ios::binary);
+if (!outFile) {
+cerr << "Error opening file for writing." << endl;
+return;
+}
+
+
+// first write the length
+outFile.write(reinterpret_cast<char*>(&length), sizeof(length));
+
+
+// then write the array values
+outFile.write(reinterpret_cast<char*>(arr), length * sizeof(int));
+
+
+outFile.close();
+}
+
+
+// readBinary(): reads length and array values from a binary file
+int* readBinary(int& length) {
+ifstream inFile("binary.dat", ios::binary);
+if (!inFile) {
+cerr << "Error opening file for reading." << endl;
+return nullptr;
+}
+
+
+// read length first
+inFile.read(reinterpret_cast<char*>(&length), sizeof(length));
+
+
+// allocate dynamic array
+int* arr = new int[length];
+
+
+// read all integers into the array
+inFile.read(reinterpret_cast<char*>(arr), length * sizeof(int));
+
+
+inFile.close();
+return arr;
+}
+
+
+int main() {
+// Step 1: Create array
+int length = 0;
+int* arr = createArray(&length);
+
+
+// Step 2: Write array to binary file
+writeBinary(arr, length);
