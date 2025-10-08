@@ -1,0 +1,109 @@
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+#include <ctime>
+using namespace std;
+
+// Define the constant for array size
+const int SIZE = 1000;
+
+// Function prototypes
+int* createArray(int* length);
+void writeBinary(int* arr, int length);
+int* readBinary(int& length);
+
+// Main function
+int main() {
+    int length = 0; // variable to store array length
+
+    // Create dynamic array
+    int* arr = createArray(&length);
+
+    // Write array to binary file
+    writeBinary(arr, length);
+
+    // Free memory and reset pointer
+    delete[] arr;
+    arr = nullptr;
+
+    // Read array back from file
+    int newLength = 0;
+    int* newArr = readBinary(newLength);
+
+    // Print out array values
+    for (int i = 0; i < newLength; i++) {
+        cout << newArr[i] << " ";
+        if ((i + 1) % 16 == 0) // format output: 16 numbers per line
+            cout << endl;
+    }
+    cout << endl;
+
+    // Free the second dynamic array
+    delete[] newArr;
+    newArr = nullptr;
+
+    return 0;
+}
+
+/** 
+    Creates a dynamic array of 1000 random integers
+    @param length the length of the newly created array
+    @return arr pointer to the array
+*/
+int* createArray(int* length) {
+    *length = SIZE; // assign array size
+    int* arr = new int[*length]; // create dynamic array
+
+    srand(static_cast<unsigned int>(time(0))); // seed random number generator
+
+    for (int i = 0; i < *length; i++) {
+        arr[i] = rand() % 1000; // fill with random numbers 0–999
+    }
+
+    return arr; // return pointer to the array
+}
+
+/** 
+    Writes array to binary file
+    @param arr array and its length
+*/
+void writeBinary(int* arr, int length) {
+    ofstream outFile("binary.dat", ios::binary); // open file in binary mode
+    if (!outFile) {
+        cerr << "Error opening file for writing." << endl;
+        return;
+    }
+
+    // Write array length first
+    outFile.write(reinterpret_cast<char*>(&length), sizeof(length));
+
+    // Write array contents
+    outFile.write(reinterpret_cast<char*>(arr), length * sizeof(int));
+
+    outFile.close();
+}
+
+/** 
+    Reads array from binary file
+    @param length the length of the array
+    @return arr the array
+*/ 
+int* readBinary(int& length) {
+    ifstream inFile("binary.dat", ios::binary); // open file in binary mode
+    if (!inFile) {
+        cerr << "Error opening file for reading." << endl;
+        return nullptr;
+    }
+
+    // Read length first
+    inFile.read(reinterpret_cast<char*>(&length), sizeof(length));
+
+    // Create new dynamic array
+    int* arr = new int[length];
+
+    // Read the array data
+    inFile.read(reinterpret_cast<char*>(arr), length * sizeof(int));
+
+    inFile.close();
+    return arr;
+}
