@@ -10,13 +10,14 @@ class Analyzer
 public:
 	Analyzer();
 	Analyzer(int* values, int size);
-	~Analyzer();
-	string analyze();
+	virtual ~Analyzer();				
+	virtual string analyze() = 0;
 
 private:
-	int* dataArr;
-	int dataSize;
 	void cloneValues(int* values, int size);
+protected:
+	int* dataArr;						
+	int dataSize;						
 };
 
 #endif

@@ -5,6 +5,9 @@
 #include <string>
 #include "Analyzer.h"
 #include "BinaryReader.h"
+#include "DuplicateAnalyser.h"
+#include "MissingAnalyzer.h"
+#include "StatisticsAnalyzer.h"
 
 using namespace std;
 
@@ -27,13 +30,15 @@ int main() {
 
     b1.display();                                       // to replace writing a loop per instructions
 
-    Analyzer a1(b1.getValues(), b1.getSize());          // a1 is our first analyzer instance variable
 
-    string results = "";
+    // Create one instance of each analyzer and call analyze()
+    StatisticsAnalyzer stats(b1.getValues(), b1.getSize()); 
+    DuplicateAnalyser dup(b1.getValues(), b1.getSize());    
+    MissingAnalyzer miss(b1.getValues(), b1.getSize());   
 
-    results = a1.analyze();                                       // calling analyze method to print results
-
-    cout << results;
+    cout << stats.analyze() << endl;
+    cout << dup.analyze() << endl;
+    cout << miss.analyze() << endl;
 
     return 0;
 }
@@ -75,7 +80,7 @@ void createBinaryFile(const string& name, int length)   // Module 2 - Gerardo Ca
     srand(static_cast<unsigned int>(time(0)));          // seed random number generator
 
     for (int i = 0; i < length; i++) {
-        arr[i] = rand() % 1000;                         // fill with random numbers 0–999
+        arr[i] = rand() % 1000;                         // fill with random numbers 0â€“999
     }
 
     int arr_size = arr[0];                              // the first value, this will be the size of binary data
@@ -83,5 +88,7 @@ void createBinaryFile(const string& name, int length)   // Module 2 - Gerardo Ca
     writeBinary(arr, arr_size, name);                   // Added call per Module 2
 
 }
+
+
 
 
