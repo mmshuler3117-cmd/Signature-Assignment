@@ -19,19 +19,26 @@ DuplicateAnalyser::DuplicateAnalyser(int* values, int size) : Analyzer(values, s
 // This will scan the data and determine which values appear more than once.
 string DuplicateAnalyser::analyze()
 {
+    cout << endl;       // for presentation purposes
     int dupCount = 0;
+    if (!dataArr || dataSize == 0)
+    {
+        cout << "No data to display.\n";
+        return "";
+    }
     sort(dataArr, dataArr + dataSize);
-    vector<int> duplicates;                     // storing duplicates in vector to call size() member function later
     for (int i = 0; i < dataSize - 1; i++)
     {
-        if (dataArr[i] == dataArr[i + 1]);
-        if (duplicates.empty() || duplicates.back() != dataArr[i])
+        if (dataArr[i] == dataArr[i + 1])
         {
-            duplicates.push_back(dataArr[i]);
+            if (i == 0 || dataArr[i] != dataArr[i-1])
+            {
+                cout << dataArr[i] << " ";
+                dupCount++;
+            }
         }
     }
-    dupCount = duplicates.size();
 
-    return ("There were " + to_string(dupCount) + " duplicated values");
+    return ("\nThere were " + to_string(dupCount) + " duplicated values (listed above)\n");
 }
 

@@ -50,13 +50,17 @@ string MissingAnalyzer::analyze()
     ostringstream oss;
     oss << "MissingAnalyzer: in the range [" << minv << ", " << maxv << "] there are "
         << missingCount << " missing value(s).";
-    if (!missingValues.empty()) {
-        oss << " Missing values: ";
-        for (size_t i = 0; i < missingValues.size(); ++i) {
-            if (i) oss << ", ";
-            oss << missingValues[i];
+    if (!missingValues.empty()) 
+    {
+        oss << "\nMissing values: ";
+        for (size_t i = 0; i < missingValues.size(); ++i) 
+        {
+            oss << missingValues[i] << " ";
+            if ((i + 1) % 16 == 0)
+            {
+                oss << endl;
+            }
         }
-        oss << ".";
     }
     return oss.str();
 }
