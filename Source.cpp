@@ -1,0 +1,588 @@
+/* ---------------------------------------------------------------------------
+** Group project - Team members contributed as equally as possible in design and
+** implementation of the solution. The weekly module workload was divided into
+** 4 to 5 individual tasks while maintaining active participation in meetings/communications
+**
+** Class: 	CSC 252
+** Assignment: 	Signature Assignment 5
+** File: 	source.cpp
+** Description: Develop code for classes to read and analyze binary data.
+**
+**
+** Author(s): 	Missy Shuler, Gerardo Castro, Marcell Njei, Tinya Payne
+** Date: 	    10/25/2025
+** -------------------------------------------------------------------------*/
+
+#include <iostream>
+#include <fstream>
+#include <cstdlib>          // for generating random numbers
+#include <ctime>            // to specify a seed in random numbers
+#include <climits>          // Required for INT_MAX - once sorted array, StatisticalAnalyzer class
+#include <string>
+#include <vector>
+#include <algorithm>        // for sorting array
+#include <unordered_set>    // MissingAnalyzer class
+#include <sstream>	        // MissingAnalyzer class
+
+using namespace std;
+
+// Define the constant for array size
+const int SIZE = 1000;
+
+// Function prototypes
+void writeBinary(int* values, int length, const string& name);                  // Missy Shuler      
+void createBinaryFile(const string& name, int length);                          // Missy Shuler
+void selection_sort(int* values, int size);                                     // Missy Shuler
+void swap_ints(int& a, int& b);                                                 // Missy Shuler
+bool binary_search_recursive(int* values, int key, int start, int end);         // Tinya Payne
+bool binary_search(int* values, int size, int key);                             // Tinya Payne
+
+
+class Analyzer
+{
+public:
+    Analyzer();
+    Analyzer(int* values, int size);
+    virtual ~Analyzer();
+    virtual string analyze() = 0;
+
+private:
+    void cloneValues(int* values, int size);
+protected:
+    int* dataArr;
+    int dataSize;
+};
+
+/**
+    Constructs an analyzer, initializing array and its size.
+*/
+Analyzer::Analyzer()
+{
+    dataArr = nullptr;
+    dataSize = 0;
+}
+
+/**
+    Constructor to copy elements of array and its size
+    @values the integer pointer representing an array of integers
+    @size the integer representing the array's size
+*/
+Analyzer::Analyzer(int* values, int size)
+{
+    cloneValues(values, size);
+}
+
+/**
+    Destructor to delete the dynamic array.
+*/
+Analyzer::~Analyzer()
+{
+    delete[] dataArr;
+}
+
+void Analyzer::cloneValues(int* values, int size)
+{
+    dataSize = size;
+    dataArr = new int[dataSize];
+    for (int i = 0; i < dataSize; i++)
+    {
+        dataArr[i] = values[i];         // copy all data, including first value
+    }
+}
+
+class BinaryReader
+{
+public:
+    BinaryReader();
+    BinaryReader(const string& name);
+    ~BinaryReader();
+    int* getValues() const;
+    int getSize() const;
+    void display() const;
+private:
+    void readValues(const string& name);
+    int* arr;
+    int size;
+};
+
+BinaryReader::BinaryReader()
+{
+    arr = nullptr;
+    size = 0;
+}
+
+// Constructor automatically reads from file
+BinaryReader::BinaryReader(const string& name)
+{
+    readValues(name);
+}
+
+// Destructor frees allocated memory
+BinaryReader::~BinaryReader()
+{
+    delete[] arr;
+
+}
+
+// Getter for array pointer
+int* BinaryReader::getValues() const
+{
+    return arr;
+}
+
+// Getter for array size
+int BinaryReader::getSize() const
+{
+    return size;
+}
+
+// Optional display helper
+void BinaryReader::display() const
+{
+    int columns = 16;                           // Set the number of columns here
+    if (!arr || size == 0)
+    {
+        cout << "No data to display.\n";
+        return;
+    }
+    for (int i = 0; i < size; ++i)
+    {
+        cout << arr[i] << " ";
+        if ((i + 1) % columns == 0)
+        {
+            cout << endl;
+        }
+    }
+    cout << endl;
+
+}
+
+void BinaryReader::readValues(const string& name)
+{
+    ifstream inFile(name, ios::binary);
+    if (!inFile)
+    {
+        cerr << "Error: Could not open file " << name << " for reading.\n";
+        arr = nullptr;
+        size = 0;
+        return;
+    }
+
+    // Read array size
+    inFile.read(reinterpret_cast<char*>(&size), sizeof(size));
+
+    // Allocate memory for array
+    arr = new int[size];
+
+    // Read array data
+    inFile.read(reinterpret_cast<char*>(arr), sizeof(int) * size);
+
+    inFile.close();
+
+}
+
+class DuplicateAnalyser : public Analyzer
+{
+public:
+    DuplicateAnalyser();
+    DuplicateAnalyser(int* values, int size);
+    virtual string analyze() override;
+};
+
+DuplicateAnalyser::DuplicateAnalyser()
+{
+}
+
+DuplicateAnalyser::DuplicateAnalyser(int* values, int size) : Analyzer(values, size)
+{
+    // Base class constructor passing the parameter values per Module 3 instructions
+}
+
+// This will scan the data and determine which values appear more than once.
+string DuplicateAnalyser::analyze()
+{
+    cout << endl;       // for presentation purposes
+    int dupCount = 0;
+    if (!dataArr || dataSize == 0)
+    {
+        cout << "No data to display.\n";
+        return "";
+    }
+    sort(dataArr, dataArr + dataSize);
+    for (int i = 0; i < dataSize - 1; i++)
+    {
+        if (dataArr[i] == dataArr[i + 1])
+        {
+            if (i == 0 || dataArr[i] != dataArr[i - 1])
+            {
+                cout << dataArr[i] << " ";
+                dupCount++;
+            }
+        }
+    }
+
+    return ("\nThere were " + to_string(dupCount) + " duplicated values (listed above)\n");
+}
+
+class MissingAnalyzer : public Analyzer
+{
+public:
+    MissingAnalyzer();
+    MissingAnalyzer(int* values, int size);
+    virtual string analyze() override;
+};
+
+MissingAnalyzer::MissingAnalyzer()
+{
+}
+
+MissingAnalyzer::MissingAnalyzer(int* values, int size) : Analyzer(values, size)
+{
+    // Base class constructor passing the parameter values per Module 3 instructions
+}
+
+string MissingAnalyzer::analyze()
+{
+    // MissingAnalyzer: counts missing integers in the inclusive range [min, max]
+    if (dataSize <= 0) {
+        return "MissingAnalyzer: dataset is empty — 0 missing values.";
+    }
+
+    int minv = dataArr[0];
+    int maxv = dataArr[0];
+    unordered_set<int> present;   
+
+    present.reserve(static_cast<size_t>(dataSize) * 2);
+
+    for (int i = 0; i < dataSize; ++i) {
+        int v = dataArr[i];
+        present.insert(v);
+        if (v < minv) minv = v;
+        if (v > maxv) maxv = v;
+    }
+
+    // Count numbers in [minv, maxv] that are not present
+    int missingCount = 0;
+    vector<int> missingValues;
+    for (int x = minv; x <= maxv; ++x) {
+        if (present.find(x) == present.end()) {
+            ++missingCount;
+            missingValues.push_back(x);
+        }
+    }
+
+    ostringstream oss;
+    oss << "MissingAnalyzer: in the range [" << minv << ", " << maxv << "] there are "
+        << missingCount << " missing value(s).";
+    if (!missingValues.empty())
+    {
+        oss << "\nMissing values: ";
+        for (size_t i = 0; i < missingValues.size(); ++i)
+        {
+            oss << missingValues[i] << " ";
+            if ((i + 1) % 16 == 0)
+            {
+                oss << endl;
+            }
+        }
+    }
+    return oss.str();
+}
+
+class StatisticsAnalyzer : public Analyzer
+{
+public:
+    StatisticsAnalyzer(int* values, int size);
+    virtual string analyze() override;
+};
+
+/**
+    Constructor that takes an integer array and its size.
+    Calls the base class constructor to initialize the data.
+    @param values the integer pointer representing an array of integers
+    @param size the integer representing the array's size
+*/
+StatisticsAnalyzer::StatisticsAnalyzer(int* values, int size) : Analyzer(values, size)
+{
+    // Base class constructor handles copying values
+    selection_sort(dataArr, dataSize);                      // Passing the instance variables
+}
+
+/**
+    Determines the mean, minimum value, and maximum value from the values in the array.
+    Properly processes all elements without using first element as count.
+    @return string message with the calculated statistics
+*/
+string StatisticsAnalyzer::analyze()
+{
+
+    int sumValue = 0;
+    int countValue = 0;
+
+    int minValue = dataArr[0];                  // Array is now sorted, altering min value
+    int maxValue = dataArr[dataSize - 1];       // Array is now sorted, altering max value
+
+    double meanValue = 0;                       // Mathematical average
+    int modeValue = 0;                          // The most frequently occurring value
+    int modeValueCount = 0;                     // The number of times the mode occured (if more than one value occurs 
+    // with this frequency, pick the first one
+
+
+// Process all elements in the array (0 to dataSize-1)
+    for (int i = 0; i < dataSize; i++)
+    {
+        sumValue += dataArr[i];
+        countValue++;
+    }
+
+    // Calculation of the mathematical mean value
+    if (countValue > 0)
+    {
+        meanValue = static_cast<double>(sumValue) / countValue;
+    }
+
+    // Calculation of the median, the exact middle value if there is an odd number of elements. Otherwise, the mean of the two middle values
+    int middleIndex = dataSize / 2;
+    double medianValue = (dataSize % 2 == 0) ? (static_cast<double>(dataArr[middleIndex]) + dataArr[middleIndex - 1]) / 2 : dataArr[middleIndex];
+
+
+    // Calculation of the mode
+    for (int i = 0; i < dataSize; i++)
+    {
+        int currentValue = dataArr[i];
+        int currentCount = 0;
+        for (int j = 0; j < dataSize; j++)
+        {
+            if (dataArr[j] == currentValue)
+            {
+                currentCount++;
+            }
+        }
+        if (currentCount > modeValueCount)
+        {
+            modeValueCount = currentCount;
+            modeValue = currentValue;
+        }
+    }
+
+
+    return ("\nThe minimum value is " + to_string(minValue) +
+        "\nThe maximum value is " + to_string(maxValue) +
+        "\nThe mean value is " + to_string(meanValue) +
+        "\nThe median value is " + to_string(medianValue) +
+        "\nThe mode value is " + to_string(modeValue) + " which occurred " + to_string(modeValueCount) + " times");
+}
+
+class SearchAnalyzer : public Analyzer
+{
+public:
+    SearchAnalyzer();
+    SearchAnalyzer(int* values, int size);
+    virtual string analyze() override;
+};
+
+/**
+    Default constructor
+*/
+SearchAnalyzer::SearchAnalyzer()
+{
+}
+
+/**
+    Constructor that takes an integer array and its size.
+    Calls the base class constructor to initialize the data,
+    then sorts the instance variable array.
+    @param values the integer pointer representing an array of integers
+    @param size the integer representing the array's size
+*/
+SearchAnalyzer::SearchAnalyzer(int* values, int size) : Analyzer(values, size)
+{
+    // Base class constructor handles copying values to dataArr
+    // Now sort the instance variable (dataArr), NOT the parameter
+    selection_sort(dataArr, dataSize);
+}
+
+/**
+    Generates 100 random integers and searches for them in the sorted data.
+    Counts how many of the random values are found.
+    @return string message with the count of found values
+*/
+string SearchAnalyzer::analyze()
+{
+    cout << endl;
+    int foundCount = 0;
+    const int NUM_SEARCHES = 100;
+    bool found_random = false;
+
+    // Use a different seed offset to avoid correlation with data generation
+    srand(static_cast<unsigned int>(time(0)) + 12345);
+
+    // Generate 100 random values and search for each
+    for (int i = 0; i < NUM_SEARCHES; i++)
+    {
+        int randomValue = rand() % 1000;            // Generate random number 0-999
+        // cout << randomValue << " " << endl;      // Remove comment to see values
+
+        // Use binary_search to check if value exists in sorted dataArr
+        found_random = binary_search(dataArr, dataSize, randomValue);
+
+        if (found_random)  // Value was found
+        {
+            foundCount++;
+        }
+    }
+
+    return ("\n" + to_string(foundCount) + " out of " + to_string(NUM_SEARCHES) +
+        " random values were found in the data\n");
+}
+
+
+// Main function
+int main() {
+
+
+    createBinaryFile("binary.dat", SIZE);                   // Making the first call to create binary file, using global constant
+    BinaryReader br("binary.dat");                          // b1 is our first binary reader instance variable
+
+    br.display();                                           // to display data
+
+
+    // Create one instance of each analyzer and call analyze()
+    StatisticsAnalyzer sa(br.getValues(), br.getSize());    // Gerardo Castro & Marcell Njei
+    cout << sa.analyze() << endl;
+    DuplicateAnalyser da(br.getValues(), br.getSize());     // Gerardo Castro
+    cout << da.analyze() << endl;
+    MissingAnalyzer ma(br.getValues(), br.getSize());       // Tinya Payne
+    cout << ma.analyze() << endl;
+    SearchAnalyzer ra(br.getValues(), br.getSize());        // Marcell Njei
+    cout << ra.analyze() << endl;
+
+    return 0;
+}
+
+
+/**
+    Opens a binary file to store the binary data
+    @param values the array holding the elements, first value being the size of binary data
+    @param length the size of the binary data as indicated by first element in array
+    @param the name of the file used to write to binary data
+*/
+void writeBinary(int* values, int length, const string& name)
+{
+    ofstream outFile(name, ios::binary); // open file in binary mode
+    if (!outFile) {
+        cerr << "Error opening file for writing." << endl;
+        return;
+    }
+
+    // Write array length first
+    outFile.write(reinterpret_cast<char*>(&length), sizeof(length));
+
+    // Write array contents
+    outFile.write(reinterpret_cast<char*>(values), length * sizeof(int));
+
+    outFile.close();
+}
+
+/**
+    Creates a dynamic array of random numbers, with the first value being the size of binary data,
+    not the size of the newly created array.
+    @param name the name of the file
+    @length the size of array, first value generated by seed random number generator
+*/
+void createBinaryFile(const string& name, int length)
+{
+    int* arr = new int[length];
+
+    srand(static_cast<unsigned int>(time(0)));          // seed random number generator
+
+    for (int i = 0; i < length; i++) {
+        arr[i] = rand() % 1000;                         // fill with random numbers 0–999
+    }
+
+    int arr_size = arr[0];                              // the first value, this will be the size of binary data
+
+    writeBinary(arr, arr_size, name);                   // Added call per Module 2
+
+}
+
+/**
+    Sort the array in place
+    @param values an integer pointer representing the array of values
+    @param size an integer size
+*/
+void selection_sort(int* values, int size)
+{
+    for (int i = 0; i < size - 1; i++)
+    {
+        int minIndex = i;
+
+        // Find the index of the smallest element
+        for (int j = i + 1; j < size; j++)
+        {
+            if (values[j] < values[minIndex])
+            {
+                minIndex = j;
+            }
+        }
+
+        // Swap the current index with the found minimum
+        if (minIndex != i)
+        {
+            swap_ints(values[i], values[minIndex]);
+        }
+    }
+}
+
+/**
+    Helper function to swap two integers
+    @param a element in array
+    @param b element in array
+ */
+void swap_ints(int& a, int& b)
+{
+    int temp = a;
+    a = b;
+    b = temp;
+}
+
+/**
+    Recursive function which takes four parameters from a helper function
+    @param values an integer pointer representing the array of values
+    @param key integer representing the value to be searched for
+    @param start the integer for the starting index
+    @param end the integer for the ending index
+*/
+bool binary_search_recursive(int* values, int key, int start, int end)
+{
+    if (start > end)
+    {
+        return false; // Base case: not found
+    }
+
+    int mid = start + (end - start) / 2;
+
+    if (values[mid] == key)
+    {
+        return true; // Found the value
+    }
+    else if (values[mid] > key)
+    {
+        return binary_search_recursive(values, key, start, mid - 1);
+    }
+    else
+    {
+        return binary_search_recursive(values, key, mid + 1, end);
+    }
+}
+
+/**
+    Helper function that takes three parameters
+    @param values an integer pointer representing the array of values
+    @param size the array size
+    @param key integer representing the value to be searched for
+*/
+bool binary_search(int* values, int size, int key)
+{
+    return binary_search_recursive(values, key, 0, size - 1);
+}
